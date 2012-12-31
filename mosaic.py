@@ -1,9 +1,9 @@
 import Image
 from numpy import *
+from scipy.spatial import KDTree
 import glob
 import json
 import os
-from bisect import bisect_left, bisect_right
 import logging
 from collections import deque
 
@@ -11,9 +11,6 @@ THUMB_SIZE = (100, 100)
 THUMB_FILTER = Image.BILINEAR
 THUMB_CACHE = "cache.json"
 MOSAIC_SIZE = THUMB_SIZE
-
-
-# If photo doesn't fit the THUMB_SIZE, just fill the borders with dominating color
 
 
 def dominating_color(im):
@@ -62,8 +59,7 @@ def process_images(path):
 class Palette(object):
     def __init__(self, images):
         self.cache = {}
-        self.colors = list(tuple(v["color"]) for v in images.itervalues())
-        self.colors.sort()
+        self.kdtree = KDTree([v["color"] for v in images.itervalues()])
 
         self.pmap = {}
         for (img_path, i) in images.iteritems():
@@ -73,15 +69,8 @@ class Palette(object):
             self.pmap[color].append(i["thumbnail"])
 
     def get_closest_color(self, c):
-        ln = len(self.colors) - 1
-        l = self.colors[min(ln, bisect_left(self.colors, c))]
-        r = self.colors[min(ln, bisect_right(self.colors, c))]
-        dl = abs(array(c) - array(l))
-        dr = abs(array(c) - array(r))
-        if dl.sum() < dr.sum():
-            return l
-        else:
-            return r
+        dist, idx = self.kdtree.query(c)
+        return tuple(self.kdtree.data[idx])
 
     def get_image(self, color):
         variants = self.pmap[color]
@@ -137,10 +126,14 @@ def make_mosaic(im, palette):
     return ni
 
 
-def add_dominating_square(img):
-    c = dominating_color(img)
-    s = Image.new("RGB", (img.size[0]/3, img.size[1]/3), c)
-    img.paste(s, (0, 0))
+def save_result(img, fname="result.jpg"):
+    logging.info(fname)
+    img.save(fname)
+
+
+def show_result(img):
+    logging.info("showing")
+    img.show()
 
 
 def main():
@@ -148,14 +141,12 @@ def main():
     cache = process_images("images")
     palette = Palette(cache)
 
-    src = Image.open("avatar.png")
+    src = Image.open("volga.jpg")
     src.thumbnail(MOSAIC_SIZE, THUMB_FILTER)
-    #add_dominating_square(src)
-    #src.show()
-    #dither(src, palette)
+    dither(src, palette)
     res = make_mosaic(src, palette)
-    res.save("result.jpg")
-    res.show()
+    #save_result(res)
+    show_result(res)
 
 if __name__ == "__main__":
     main()
