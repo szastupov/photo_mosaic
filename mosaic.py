@@ -6,11 +6,12 @@ import json
 import os
 import logging
 from collections import deque
+import argparse
 
 THUMB_SIZE = (100, 100)
 THUMB_FILTER = Image.BILINEAR
 THUMB_CACHE = "cache.json"
-MOSAIC_SIZE = THUMB_SIZE
+MOSAIC_SIZE = (200, 200)
 
 
 def dominating_color(im):
@@ -25,7 +26,7 @@ def process_images(path):
     else:
         cache = {}
 
-    thumbs_dir = path + "/thumbs"
+    thumbs_dir = os.path.join(path, "thumbs")
     if not os.path.exists(thumbs_dir):
         os.mkdir(thumbs_dir)
 
@@ -126,7 +127,7 @@ def make_mosaic(im, palette):
     return ni
 
 
-def save_result(img, fname="result.jpg"):
+def save_result(img, fname):
     logging.info(fname)
     img.save(fname)
 
@@ -136,17 +137,33 @@ def show_result(img):
     img.show()
 
 
+def size(s):
+    try:
+        x, y = map(int, s.split('x'))
+        return (x, y)
+    except:
+        raise argparse.ArgumentTypeError("Must be NxN")
+
+
 def main():
     logging.basicConfig(level=logging.INFO)
-    cache = process_images("images")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--images", default="images")
+    parser.add_argument("-o", "--output", default="result.jpg")
+    parser.add_argument("-s", "--size", default=MOSAIC_SIZE, type=size)
+    parser.add_argument("input", metavar="input.jpg")
+    args = parser.parse_args()
+
+    cache = process_images(args.images)
     palette = Palette(cache)
 
-    src = Image.open("volga.jpg")
-    src.thumbnail(MOSAIC_SIZE, THUMB_FILTER)
+    src = Image.open(args.input)
+    src.thumbnail(args.size, THUMB_FILTER)
     dither(src, palette)
     res = make_mosaic(src, palette)
-    #save_result(res)
-    show_result(res)
+    save_result(res, args.output)
+    #show_result(res)
 
 if __name__ == "__main__":
     main()
