@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import Image
 from numpy import *
 from scipy.spatial import KDTree
@@ -14,7 +16,7 @@ THUMB_CACHE = "cache.json"
 MOSAIC_SIZE = (200, 200)
 
 
-def dominating_color(im):
+def dominant_color(im):
     pixels = array(im.getdata())
     color = median(pixels, axis=0).astype(int)
     return tuple(color)
@@ -40,7 +42,7 @@ def process_images(path):
 
         im = Image.open(n)
         im.thumbnail(THUMB_SIZE, THUMB_FILTER)
-        color = dominating_color(im)
+        color = dominant_color(im)
 
         tn = "%s/%s" % (thumbs_dir, os.path.basename(n))
 
