@@ -154,6 +154,7 @@ def main():
     parser.add_argument("-i", "--images", default="images")
     parser.add_argument("-o", "--output", default="result.jpg")
     parser.add_argument("-s", "--size", default=MOSAIC_SIZE, type=size)
+    parser.add_argument("-nd", "--dither", action='store_false', default=True)
     parser.add_argument("input", metavar="input.jpg")
     args = parser.parse_args()
 
@@ -162,7 +163,8 @@ def main():
 
     src = Image.open(args.input)
     src.thumbnail(args.size, THUMB_FILTER)
-    dither(src, palette)
+    if args.dither:
+        dither(src, palette)
     res = make_mosaic(src, palette)
     save_result(res, args.output)
     #show_result(res)
