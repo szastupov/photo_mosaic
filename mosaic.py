@@ -9,6 +9,8 @@ import os
 import logging
 from collections import deque
 import argparse
+#from scipy.cluster.vq import kmeans2
+#from collections import Counter
 
 THUMB_SIZE = (100, 100)
 THUMB_FILTER = Image.BILINEAR
@@ -18,7 +20,11 @@ MOSAIC_SIZE = (200, 200)
 
 def dominant_color(im):
     pixels = array(im.getdata())
-    color = median(pixels, axis=0).astype(int)
+    #(centroids, indeces) = kmeans2(pixels, 3, minit='points')
+    #ci = Counter(indeces).most_common(1)[0][0]
+    #color = centroids[ci]
+    #color = median(pixels, axis=0).astype(int)
+    color = mean(pixels, axis=0).astype(int)
     return tuple(color)
 
 
@@ -40,7 +46,7 @@ def process_images(path):
             continue
         logging.info("Processing image %s, %d of %d" % (n, ni, len(names)))
 
-        im = Image.open(n)
+        im = Image.open(n).convert("RGB")
         im.thumbnail(THUMB_SIZE, THUMB_FILTER)
         color = dominant_color(im)
 
